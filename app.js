@@ -11,7 +11,7 @@
   let direction = 'auto', matches = [], page = 0, timer;
   const date = new Date(data.metadata.asOf + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   $('data-note').textContent = 'Crosswalk: ' + date + ' · ' + data.rows.length.toLocaleString() + ' mappings';
-  $('source-note').textContent = 'Source: ' + data.metadata.source;
+  $('source-note').textContent = 'Mappings: ' + data.metadata.source + (data.metadata.descriptionSource ? ' · Oracle descriptions: '+data.metadata.descriptionSource : '');
   $('search-button').disabled = false;
   const create = (tag,cls,text) => {const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
   function announceCopy(message) {
@@ -41,9 +41,50 @@
       const group=create('div'),dd=create('dd');
       dd.append(create('span','segment-code',row[index] || 'None'));
       if(row[index])dd.append(copyButton(row[index],name,'segment-copy'));
+      if(system==='oracle')dd.append(create('span','description',description(index,row[index])));
       group.append(create('dt',null,name),dd);dl.append(group);
     }
     block.append(dl);return block;
+  }
+  function description(index,code) {
+    const entry=data.catalog?.[index]?.[code];
+    return entry ? entry.descriptions.join(' / ') : 'Description not supplied';
+  }
+  function renderSummary(found) {
+    const target=$('conversion-summary');target.replaceChildren();target.hidden=true;
+    if(found.kind!=='segment'&&found.kind!=='prefix')return;
+    const definitions=found.definitions||[];
+    const columns=found.matchedColumns||[];
+    if(!definitions.length&&!columns.length)return;
+    target.hidden=false;
+    target.append(create('h2',null,found.kind==='prefix'?'Codes beginning with your entry':'Your code'));
+    const list=create('div','definition-list');
+    for(const def of definitions) {
+      const item=create('div','definition');
+      item.append(create('strong',null,def.name+' '+def.code),create('span','description',def.descriptions.join(' / ')));
+      item.append(create('small','reference',(def.level==='parent'?'Hierarchy parent · ':'')+data.metadata.descriptionSheets[def.index]+' row '+def.references.join(', ')));
+      list.append(item);
+    }
+    if(definitions.length>12){const more=create('details');more.append(create('summary',null,definitions.length+' code descriptions'),list);target.append(more);}else target.append(list);
+    if(!found.rows.length){target.append(create('p','match-note','Description found in the Oracle reference file. No corresponding conversion was found in the crosswalk for this search.'));return;}
+    const sourceFields=api.fields.auto.filter(([i])=>columns.includes(i));
+    for(const [column,label] of sourceFields) {
+      const sourceCode=found.rows.find(r=>api.normalize(r[column])===api.normalize($('code').value.replace(/^CC_/i,'')))?.[column];
+      if(!sourceCode)continue;
+      const related=found.rows.filter(r=>r[column]===sourceCode);
+      const system=column<3?'oracle':'munis';
+      target.append(create('h3',null,label+' '+sourceCode+' → related '+(system==='oracle'?'Oracle':'Munis')+' codes'));
+      for(const [index,name] of api.fields[system]) {
+        const values=[...new Set(related.map(r=>r[index]).filter(Boolean))].sort();
+        if(!values.length)continue;
+        const group=create('details','related-codes');group.open=values.length<=8;
+        group.append(create('summary',null,name+' · '+values.length+' '+(values.length===1?'code':'codes')));
+        const entries=create('div','related-list');
+        for(const value of values){const line=create('div','related-code');line.append(create('span','segment-code',value),copyButton(value,name,'segment-copy'));if(system==='oracle')line.append(create('span','description',description(index,value)));entries.append(line);}
+        group.append(entries);target.append(group);
+      }
+    }
+    target.append(create('p','match-note','These codes occur together in the matching crosswalk rows. Review the full entries below for valid combinations. Oracle descriptions come from the supplied reference file'+(data.metadata.descriptionAsOf?' dated '+data.metadata.descriptionAsOf:'')+'.'));
   }
   function renderPage() {
     results.replaceChildren();
@@ -58,7 +99,7 @@
     $('previous').disabled=page===0;$('next').disabled=page>=pages-1;
     $('page-label').textContent='Page '+(page+1)+' of '+pages;
   }
-  function resetResults() { matches=[];page=0;renderPage();status.textContent='Ready when you are. Enter a code above to find its match.'; }
+  function resetResults() { matches=[];page=0;renderPage();$('conversion-summary').replaceChildren();$('conversion-summary').hidden=true;status.textContent='Ready when you are. Enter any full code or individual segment from the source files.'; }
   function setDirection() {
     direction=document.querySelector('input[name=direction]:checked').value;
     const name=direction==='munis'?'Munis':'Oracle';
@@ -74,11 +115,11 @@
   }
   function runSearch() {
     const filters=Object.fromEntries([...$('segment-fields').querySelectorAll('input')].map(i=>[i.dataset.column,i.value]));
-    const found=api.search(data.rows,direction,$('code').value,filters);matches=found.rows;page=0;renderPage();
+    const found=api.search(data.rows,direction,$('code').value,filters,data.catalog);matches=found.rows;page=0;renderPage();renderSummary(found);
     if(found.kind==='empty'){status.textContent='Enter a cost center, individual code, full code or at least one search field.';$('code').focus();return;}
     if(found.kind==='invalid'){status.textContent='Use letters and numbers. Spaces, periods, hyphens and slashes are accepted as separators.';return;}
     if(found.kind==='short'){status.textContent='Enter at least 3 characters for a partial code, or search by individual fields.';return;}
-    if(!matches.length){status.textContent='No match found in this crosswalk. Check the direction and entered fields, or try a shorter code. Leading zeros matter.';return;}
+    if(!matches.length){status.textContent=found.definitions?.length ? found.definitions.length+' Oracle '+(found.definitions.length===1?'code description':'code descriptions')+' found. No conversion found for this search.' : 'No match found in the supplied files. Check the system and entered fields, or try a shorter code. Leading zeros matter.';return;}
     const exact=found.kind==='exact'||found.kind==='segment';
     status.replaceChildren(create('strong',null,matches.length.toLocaleString()+' '+(exact?'exact ':'')+(matches.length===1?'match':'matches')));
     if(found.kind==='segment')status.append(document.createTextNode(' · Matched '+found.fields.join(' or ')+'. Showing all associated crosswalk entries.'));

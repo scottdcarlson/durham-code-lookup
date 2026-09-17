@@ -6,7 +6,7 @@
   };
   fields.auto = [...fields.munis.map(([i,n])=>[i,'Munis '+n.toLowerCase()]),...fields.oracle.map(([i,n])=>[i,'Oracle '+n.toLowerCase()])];
   function normalize(value) { return String(value || '').trim().toUpperCase().replace(/[\s.\-–—/|]+/g, ''); }
-  function search(rows, direction, query, filters = {}) {
+  function search(rows, direction, query, filters = {}, catalog = {}) {
     const raw = String(query || '').trim();
     const costCenterPrefix = /^CC_/i.test(raw);
     const code = normalize(costCenterPrefix ? raw.slice(3) : raw);
@@ -21,10 +21,11 @@
     if (exact.length) return {kind:'exact', rows:exact};
     const segments = costCenterPrefix ? (direction==='munis'?[]:[[5,'Oracle cost center']]) : fields[direction];
     const matchedFields = segments.filter(([i])=>candidates.some(r=>normalize(r[i])===code));
-    if (matchedFields.length) return {kind:'segment', fields:matchedFields.map(([,name])=>name), rows:candidates.filter(r=>matchedFields.some(([i])=>normalize(r[i])===code))};
+    const definitions = segments.flatMap(([i,name])=>Object.entries(catalog[i]||{}).filter(([value])=>normalize(value)===code).map(([value,entry])=>({index:i,name,code:value,...entry})));
+    if (matchedFields.length || definitions.length) return {kind:'segment', definitions, matchedColumns:matchedFields.map(([i])=>i), fields:[...new Set([...matchedFields.map(([,name])=>name),...definitions.map(d=>d.name)])], rows:candidates.filter(r=>matchedFields.some(([i])=>normalize(r[i])===code))};
     if (code.length < 3) return {kind:'short', rows:[]};
     const prefixColumns = costCenterPrefix ? segments.map(([i])=>i) : [...columns,...segments.map(([i])=>i)];
-    return {kind:'prefix', rows:candidates.filter(r=>prefixColumns.some(i=>normalize(r[i]).startsWith(code)))};
+    return {kind:'prefix', definitions:segments.flatMap(([i,name])=>Object.entries(catalog[i]||{}).filter(([value])=>normalize(value).startsWith(code)).map(([value,entry])=>({index:i,name,code:value,...entry}))), rows:candidates.filter(r=>prefixColumns.some(i=>normalize(r[i]).startsWith(code)))};
   }
   const api = {fields, normalize, search};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Look up City of Durham Munis and Oracle account codes in either direction.">
   <title>Munis & Oracle Code Lookup | City of Durham</title>
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="data.js"></script>
-  <script defer src="search.js?v=20260917-2"></script>
-  <script defer src="app.js?v=20260917-2"></script>
+  <link rel="stylesheet" href="styles.css?v=20260917-3">
+  <script defer src="data.js?v=20260917-3"></script>
+  <script defer src="search.js?v=20260917-3"></script>
+  <script defer src="app.js?v=20260917-3"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to lookup</a>
@@ -20,15 +20,16 @@
         <fieldset class="direction"><legend>Search in</legend><div class="direction-options"><label><input type="radio" name="direction" value="auto" checked><span>Both systems</span></label><label><input type="radio" name="direction" value="munis"><span>Munis</span></label><label><input type="radio" name="direction" value="oracle"><span>Oracle</span></label></div></fieldset>
         <div class="search-heading"><label for="code" id="code-label">Enter a code or cost center</label><button class="text-button" id="clear" type="button">Clear</button></div>
         <div class="search-row"><input id="code" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="e.g. 18101020 or 0E000000720100" aria-describedby="search-help"><button type="submit" class="primary" id="search-button" disabled>Find code <span aria-hidden="true">→</span></button></div>
-        <p class="help" id="search-help">Enter a cost center, organization, account, project or full code. CC_ prefixes, spaces, periods and hyphens are accepted.</p>
+        <p class="help" id="search-help">Enter any full code or individual segment: organization, object, fund, cost center, account, project, program, interfund or future. CC_ prefixes, spaces, periods and hyphens are accepted.</p>
         <div class="examples">Try an example: <button type="button" id="example">0E000000720100</button></div>
         <details id="segment-details"><summary>Search by individual fields</summary><p class="help">Enter one or more fields. All entered fields must match. You can leave the full code blank.</p><div id="segment-fields" class="segment-fields"></div></details>
       </form>
       <div id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Loading mappings…</div>
+      <section id="conversion-summary" class="conversion-summary" aria-label="Code descriptions and conversions" hidden></section>
       <div id="results"></div>
       <nav class="pagination" aria-label="Result pages" hidden><button id="previous" type="button" class="secondary">Previous</button><span id="page-label"></span><button id="next" type="button" class="secondary">Next</button></nav>
     </section>
-    <section class="guidance"><div><span class="step">01</span><h2>Enter the code you know</h2><p>A cost center or individual code is enough. Both systems are searched by default.</p></div><div><span class="step">02</span><h2>Review the matches</h2><p>A cost center or Oracle code may match several Munis entries. Every matching entry is available.</p></div><div><span class="step">03</span><h2>Copy the code you need</h2><p>Copy a full code or an individual field, with all leading zeros preserved.</p></div></section>
+    <section class="guidance"><div><span class="step">01</span><h2>Enter the code you know</h2><p>A cost center or individual code is enough. Both systems are searched by default.</p></div><div><span class="step">02</span><h2>Review the matches</h2><p>A cost center or Oracle code may match several Munis entries. Oracle descriptions and every matching entry are available.</p></div><div><span class="step">03</span><h2>Copy the code you need</h2><p>Copy a full code or an individual field, with all leading zeros preserved.</p></div></section>
   </main>
   <footer><div><strong>City of Durham</strong><span>Munis & Oracle Code Lookup</span></div><p id="source-note"></p><p>Results reflect the published crosswalk. This lookup does not check whether an account is currently active.</p></footer>
   <div id="copy-status" role="status" aria-live="polite" class="toast" hidden></div>
