@@ -8,7 +8,7 @@
     return;
   }
   const PAGE_SIZE = 10;
-  let direction = 'munis', matches = [], page = 0, timer;
+  let direction = 'auto', matches = [], page = 0, timer;
   const date = new Date(data.metadata.asOf + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   $('data-note').textContent = 'Crosswalk: ' + date + ' · ' + data.rows.length.toLocaleString() + ' mappings';
   $('source-note').textContent = 'Source: ' + data.metadata.source;
@@ -50,7 +50,8 @@
     matches.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE).forEach((row,index)=>{
       const article=create('article','result'),top=create('div','result-top');
       top.append(create('h2',null,'MATCH '+(page*PAGE_SIZE+index+1)),create('span','row-reference','Crosswalk row '+row[12]));
-      article.append(top,codeBlock(row,direction==='munis'?'oracle':'munis',false),codeBlock(row,direction,true));results.append(article);
+      const sourceSystem = direction==='oracle'?'oracle':'munis';
+      article.append(top,codeBlock(row,sourceSystem==='munis'?'oracle':'munis',false),codeBlock(row,sourceSystem,true));results.append(article);
     });
     const pages=Math.ceil(matches.length/PAGE_SIZE);
     document.querySelector('.pagination').hidden=pages<=1;
@@ -61,8 +62,8 @@
   function setDirection() {
     direction=document.querySelector('input[name=direction]:checked').value;
     const name=direction==='munis'?'Munis':'Oracle';
-    const example=direction==='munis'?'0E000000720100':'100000000000110180000000000000000000000000';
-    $('code-label').textContent='Enter an '+name+' code';
+    const example=direction==='munis'?'0E000000720100':'18101020';
+    $('code-label').textContent=direction==='auto'?'Enter a code or cost center':'Enter an '+name+' code or cost center';
     if(direction==='munis')$('code-label').textContent='Enter a Munis code';
     $('code').value='';$('code').placeholder='e.g. '+example;$('example').textContent=example;
     $('segment-fields').replaceChildren();
@@ -74,13 +75,14 @@
   function runSearch() {
     const filters=Object.fromEntries([...$('segment-fields').querySelectorAll('input')].map(i=>[i.dataset.column,i.value]));
     const found=api.search(data.rows,direction,$('code').value,filters);matches=found.rows;page=0;renderPage();
-    if(found.kind==='empty'){status.textContent='Enter a complete code or at least one individual field.';$('code').focus();return;}
+    if(found.kind==='empty'){status.textContent='Enter a cost center, individual code, full code or at least one search field.';$('code').focus();return;}
     if(found.kind==='invalid'){status.textContent='Use letters and numbers. Spaces, periods, hyphens and slashes are accepted as separators.';return;}
     if(found.kind==='short'){status.textContent='Enter at least 3 characters for a partial code, or search by individual fields.';return;}
     if(!matches.length){status.textContent='No match found in this crosswalk. Check the direction and entered fields, or try a shorter code. Leading zeros matter.';return;}
-    const exact=found.kind==='exact';
+    const exact=found.kind==='exact'||found.kind==='segment';
     status.replaceChildren(create('strong',null,matches.length.toLocaleString()+' '+(exact?'exact ':'')+(matches.length===1?'match':'matches')));
-    if(found.kind==='prefix')status.append(document.createTextNode(' · No exact match. Showing codes that start with your entry.'));
+    if(found.kind==='segment')status.append(document.createTextNode(' · Matched '+found.fields.join(' or ')+'. Showing all associated crosswalk entries.'));
+    else if(found.kind==='prefix')status.append(document.createTextNode(' · No exact match. Showing full codes or individual fields that start with your entry.'));
     else if(found.kind==='fields')status.append(document.createTextNode(' · Showing entries matching all supplied fields.'));
     else if(direction==='oracle'&&matches.length>1)status.append(document.createTextNode(' · This Oracle code maps to multiple Munis entries. Review all matches.'));
     if(matches.length>PAGE_SIZE)status.append(document.createTextNode(' Displaying 10 per page. Narrow your search with individual fields.'));
