@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Look up City of Durham Munis and Oracle account codes in either direction.">
+  <title>Munis & Oracle Code Lookup | City of Durham</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="data.js"></script>
+  <script defer src="search.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to lookup</a>
+  <header><div class="header-inner"><a href="https://www.durhamnc.gov/" aria-label="City of Durham homepage"><img src="assets/durham-logo.png" alt="City of Durham" width="440" height="132"></a><span class="header-label">FINANCIAL SYSTEMS</span></div></header>
+  <main id="main">
+    <section class="intro"><p class="eyebrow">ACCOUNT CROSSWALK</p><h1>Munis & Oracle<br><span>Code lookup</span></h1><p class="lede">Find the Oracle equivalent of a Munis code, or trace an Oracle code back to Munis.</p><p class="data-note" id="data-note">Loading crosswalk…</p></section>
+    <section class="lookup-panel" aria-label="Code lookup">
+      <form id="lookup-form">
+        <fieldset class="direction"><legend>Choose a direction</legend><div class="direction-options"><label><input type="radio" name="direction" value="munis" checked><span>Munis <b aria-hidden="true">→</b> Oracle</span></label><label><input type="radio" name="direction" value="oracle"><span>Oracle <b aria-hidden="true">→</b> Munis</span></label></div></fieldset>
+        <div class="search-heading"><label for="code" id="code-label">Enter a Munis code</label><button class="text-button" id="clear" type="button">Clear</button></div>
+        <div class="search-row"><input id="code" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="e.g. 0E000000720100" aria-describedby="search-help"><button type="submit" class="primary" id="search-button" disabled>Find code <span aria-hidden="true">→</span></button></div>
+        <p class="help" id="search-help">Paste the full code. Spaces, periods and hyphens are accepted.</p>
+        <div class="examples">Try an example: <button type="button" id="example">0E000000720100</button></div>
+        <details id="segment-details"><summary>Search by individual fields</summary><p class="help">Enter one or more fields. All entered fields must match. You can leave the full code blank.</p><div id="segment-fields" class="segment-fields"></div></details>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Loading mappings…</div>
+      <div id="results"></div>
+      <nav class="pagination" aria-label="Result pages" hidden><button id="previous" type="button" class="secondary">Previous</button><span id="page-label"></span><button id="next" type="button" class="secondary">Next</button></nav>
+    </section>
+    <section class="guidance"><div><span class="step">01</span><h2>Choose your starting system</h2><p>Search with a complete code or the fields you know.</p></div><div><span class="step">02</span><h2>Review the matches</h2><p>An Oracle code may map to more than one Munis code. Every matching entry is available.</p></div><div><span class="step">03</span><h2>Copy the code you need</h2><p>Copy a full code or an individual field, with all leading zeros preserved.</p></div></section>
+  </main>
+  <footer><div><strong>City of Durham</strong><span>Munis & Oracle Code Lookup</span></div><p id="source-note"></p><p>Results reflect the published crosswalk. This lookup does not check whether an account is currently active.</p></footer>
+  <div id="copy-status" role="status" aria-live="polite" class="toast" hidden></div>
+  <noscript><p class="status">Enable JavaScript to use the code lookup.</p></noscript>
+</body>
+</html>
